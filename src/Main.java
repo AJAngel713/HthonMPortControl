@@ -29,6 +29,7 @@ public class Main {
 				return;
 			}
 			
+			
 			//////////
 			Hub hub = new Hub("com.example.MyoStick");
 
@@ -45,7 +46,6 @@ public class Main {
 			hub.addListener(dataCollector);
 
 			while (true) {
-				
 				hub.run(1000 / 20);
 //				System.out.print(dataCollector);
 			}

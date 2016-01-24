@@ -13,13 +13,16 @@ import com.thalmic.myo.enums.XDirection;
  * 
  * public enum PoseType {
     REST,
-    FIST,
-    WAVE_IN,
-    WAVE_OUT,
-    FINGERS_SPREAD,
-    DOUBLE_TAP,
+    FIST, // backward
+    WAVE_IN, // LEFT
+    WAVE_OUT, // RIGHT
+    FINGERS_SPREAD, // stop
+    DOUBLE_TAP, // forward
     UNKNOWN
 }
+forward
+backward
+stop
  */
 
 public class GestureDetector extends AbstractDeviceListener {
@@ -27,7 +30,6 @@ public class GestureDetector extends AbstractDeviceListener {
 	private double rollW;
 	private double pitchW;
 	private double yawW;
-	private Pose currentPose;
 	private Arm whichArm;
 	private SerialPort portToWrite;
 	private byte[] commands;
@@ -36,7 +38,6 @@ public class GestureDetector extends AbstractDeviceListener {
 		rollW = 0;
 		pitchW = 0;
 		yawW = 0;
-		currentPose = new Pose();
 		this.portToWrite = portToWrite;
 		commands = new byte[1];
 		commands[0] = 'x';
@@ -57,63 +58,58 @@ public class GestureDetector extends AbstractDeviceListener {
 
 	@Override
 	public void onPose(Myo myo, long timestamp, Pose pose) {
-		currentPose = pose;
-		if (currentPose.getType() == PoseType.FIST) {
-			myo.vibrate(VibrationType.VIBRATION_SHORT);
+		PoseType t = pose.getType();
+		if (t == PoseType.FIST) {
+			//myo.vibrate(VibrationType.VIBRATION_SHORT);
 			System.out.println("In FIST");
+			commands[0] = 'C';
 			portToWrite.writeBytes(commands, 1);
 		}
-		if (currentPose.getType() == PoseType.WAVE_OUT) {
-			myo.vibrate(VibrationType.VIBRATION_SHORT);
+		if (t == PoseType.WAVE_OUT) {
+			//myo.vibrate(VibrationType.VIBRATION_SHORT);
 			System.out.println("In Wave out");
+			commands[0] = 'R';
+			portToWrite.writeBytes(commands, 1);
 		}
-		if (currentPose.getType() == PoseType.WAVE_IN) {
-			myo.vibrate(VibrationType.VIBRATION_SHORT);
+		if (t == PoseType.WAVE_IN) {
+			//myo.vibrate(VibrationType.VIBRATION_SHORT);
 			System.out.println("In Wave in");
+			commands[0] = 'L';
+			portToWrite.writeBytes(commands, 1);
 		}
-		if (currentPose.getType() == PoseType.FINGERS_SPREAD) {
-			myo.vibrate(VibrationType.VIBRATION_SHORT);
+		if (t == PoseType.FINGERS_SPREAD) {
+			//myo.vibrate(VibrationType.VIBRATION_SHORT);
 			System.out.println("In FINGERS_SPREAD");
+			commands[0] = 'U';
+			portToWrite.writeBytes(commands, 1);
+		}
+		if (t == PoseType.DOUBLE_TAP) {
+			myo.vibrate(VibrationType.VIBRATION_MEDIUM);
+			System.out.println("In DOUBLE_TAP");
+			commands[0] = 'C';
+			portToWrite.writeBytes(commands, 1);
+		}
+		if (t == PoseType.UNKNOWN) {
+			myo.vibrate(VibrationType.VIBRATION_SHORT);
+			System.out.println("In UNKNOWN");
 		}
 	}
 
 	@Override
 	public void onArmSync(Myo myo, long timestamp, Arm arm, XDirection xDirection, float rotation, WarmupState warmupState) {
 		whichArm = arm;
+		System.out.println(whichArm.toString() + "Connected arm.");
 	}
 
 	@Override
 	public void onArmUnsync(Myo myo, long timestamp) {
 		whichArm = null;
+		System.out.println(whichArm.toString() + "Disconnected arm.");
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder("\r");
-
-		String xDisplay = String.format("[%s%s]", repeatCharacter('*', (int) rollW), repeatCharacter(' ', (int) (SCALE - rollW)));
-		String yDisplay = String.format("[%s%s]", repeatCharacter('*', (int) pitchW), repeatCharacter(' ', (int) (SCALE - pitchW)));
-		String zDisplay = String.format("[%s%s]", repeatCharacter('*', (int) yawW), repeatCharacter(' ', (int) (SCALE - yawW)));
-
-		String armString = null;
-		if (whichArm != null) {
-			armString = String.format("[%s]", whichArm == Arm.ARM_LEFT ? "L" : "R");
-		} else {
-			armString = String.format("[?]");
-		}
-		String poseString = null;
-		if (currentPose != null) {
-			String poseTypeString = currentPose.getType().toString();
-			poseString = String.format("[%s%" + (SCALE - poseTypeString.length()) + "s]", poseTypeString, " ");
-		} else {
-			poseString = String.format("[%14s]", " ");
-		}
-		builder.append(xDisplay);
-		builder.append(yDisplay);
-		builder.append(zDisplay);
-		builder.append(armString);
-		builder.append(poseString);
-		return builder.toString();
+		return "";
 	}
 
 	private String repeatCharacter(char character, int numOfTimes) {
